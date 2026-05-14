@@ -12,11 +12,11 @@
 #define IM_INIT_CAP 8
 #if (defined(__GNUC__) && __GNUC__ >= 4) || defined(__clang__)
 #define IM_CHECK_TYPE_KEY(im, elem) \
-static_assert(_Generic((typeof(elem)){0}, typeof(((typeof(im))0)->key): 1, default: 0), \
+_Static_assert(_Generic((typeof(elem)){0}, typeof(((typeof(im))0)->key): 1, default: 0), \
 "Key type mismatch in IndexMap operation")
 
 #define IM_CHECK_TYPE_VAL(im, elem) \
-static_assert(_Generic((typeof(elem)){0}, typeof(((typeof(im))0)->value): 1, default: 0), \
+_Static_assert(_Generic((typeof(elem)){0}, typeof(((typeof(im))0)->value): 1, default: 0), \
 "Value type mismatch in IndexMap operation")
 #else
 #define IM_CHECK_TYPE(im, elem) (void)0
@@ -90,11 +90,13 @@ IM_Status im_reserve_impl(void** im, size_t new_cap, size_t entry_size);
 #define im_insert(im, key, val) ({ \
     IM_CHECK_TYPE_KEY(im, key); \
     IM_CHECK_TYPE_VAL(im, val); \
-    im_insert_impl( \
+    __auto_type _im_tmp_k = (key); \
+    __auto_type _im_tmp_v = (val); \
+        im_insert_impl( \
         (void**)&(im), \
-        (void*)&(key), \
-        (void*)&(val), \
-        sizeof(typeof( ((typeof(im))0)->value)), \
+        (void*)&_im_tmp_k, \
+        (void*)&_im_tmp_v, \
+        sizeof(typeof(((typeof(im))0)->value)), \
         sizeof(typeof(*(im))), \
         offsetof(typeof(*(im)), value), \
         offsetof(typeof(*(im)), generation), \
@@ -104,14 +106,16 @@ IM_Status im_reserve_impl(void** im, size_t new_cap, size_t entry_size);
 
 #define im_get(im, k) ({ \
     IM_CHECK_TYPE_KEY(im, k); \
-    im_get_impl(im, (void*)&k, sizeof(typeof( ((typeof(im))0)->key)), sizeof(typeof(*(im)))); \
+    __auto_type _im_tmp_k = (k); \
+    im_get_impl(im, (void*)&(_im_tmp_k), sizeof(typeof( ((typeof(im))0)->key)), sizeof(typeof(*(im)))); \
 })
 
 #define im_remove(im, k, out_entry_ptr) ({ \
     IM_CHECK_TYPE_KEY(im, k); \
+    __auto_type _im_tmp_k = (k); \
     im_remove_impl( \
         (void**)&(im), \
-        (void*)&(k), \
+        (void*)&(_im_tmp_k), \
         sizeof(((typeof(im))0)->key), \
         sizeof(typeof(*(im))), \
         offsetof(typeof(*(im)), hash), \
