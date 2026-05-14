@@ -10,6 +10,19 @@
 #define IM_LOAD_FACTOR 0.7
 #define IM_EMPTY SIZE_MAX
 #define IM_INIT_CAP 8
+#if (defined(__GNUC__) && __GNUC__ >= 4) || defined(__clang__)
+#define IM_CHECK_TYPE_KEY(im, elem) \
+static_assert(_Generic((typeof(elem)){0}, typeof(((typeof(im))0)->key): 1, default: 0), \
+"Key type mismatch in IndexMap operation")
+
+#define IM_CHECK_TYPE_VAL(im, elem) \
+static_assert(_Generic((typeof(elem)){0}, typeof(((typeof(im))0)->value): 1, default: 0), \
+"Value type mismatch in IndexMap operation")
+#else
+#define IM_CHECK_TYPE(im, elem) (void)0
+#define IM_CHECK_TYPE_VAL(im, elem) (void)0
+#endif
+
 
 typedef size_t im_dense_idx;
 
@@ -74,27 +87,37 @@ void im_free_impl(void** im, size_t entry_size, void (*dtor_entry)(void*));
 IM_Status im_reserve_impl(void** im, size_t new_cap, size_t entry_size);
 
 
-#define im_insert(im, key, val) im_insert_impl( \
-    (void**)&(im), \
-    (void*)&(key), \
-    (void*)&(val), \
-    sizeof(typeof( ((typeof(im))0)->value)), \
-    sizeof(typeof(*(im))), \
-    offsetof(typeof(*(im)), value), \
-    offsetof(typeof(*(im)), generation), \
-    offsetof(typeof(*(im)), hash) \
-)
+#define im_insert(im, key, val) ({ \
+    IM_CHECK_TYPE_KEY(im, key); \
+    IM_CHECK_TYPE_VAL(im, val); \
+    im_insert_impl( \
+        (void**)&(im), \
+        (void*)&(key), \
+        (void*)&(val), \
+        sizeof(typeof( ((typeof(im))0)->value)), \
+        sizeof(typeof(*(im))), \
+        offsetof(typeof(*(im)), value), \
+        offsetof(typeof(*(im)), generation), \
+        offsetof(typeof(*(im)), hash) \
+    ); \
+})
 
-#define im_get(im, k) im_get_impl(im, (void*)&k, sizeof(typeof( ((typeof(im))0)->key)), sizeof(typeof(*(im))))
+#define im_get(im, k) ({ \
+    IM_CHECK_TYPE_KEY(im, k); \
+    im_get_impl(im, (void*)&k, sizeof(typeof( ((typeof(im))0)->key)), sizeof(typeof(*(im)))); \
+})
 
-#define im_remove(im, k, out_entry_ptr) im_remove_impl( \
-    (void**)&(im), \
-    (void*)&(k), \
-    sizeof(((typeof(im))0)->key), \
-    sizeof(typeof(*(im))), \
-    offsetof(typeof(*(im)), hash), \
-    out_entry_ptr \
-)
+#define im_remove(im, k, out_entry_ptr) ({ \
+    IM_CHECK_TYPE_KEY(im, k); \
+    im_remove_impl( \
+        (void**)&(im), \
+        (void*)&(k), \
+        sizeof(((typeof(im))0)->key), \
+        sizeof(typeof(*(im))), \
+        offsetof(typeof(*(im)), hash), \
+        out_entry_ptr \
+    ); \
+})
 
 #define im_clear_dtor(im, dtor_entry) im_clear_impl((void*)(im), sizeof(typeof(*(im))), dtor_entry)
 #define im_free_dtor(im, dtor_entry) im_free_impl((void**)&(im), sizeof(typeof(*(im))), dtor_entry)
