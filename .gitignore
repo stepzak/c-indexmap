@@ -1,0 +1,24 @@
+# CLion/JetBrains build directory
+cmake-build-*/
+
+# JetBrains IDE folder (contains project settings)
+.idea/
+
+# Exceptions: Keep shared project settings if working in a team
+# (Remove the ".idea/" line above and use these if you want shared settings)
+# !.idea/vcs.xml
+# !.idea/codeStyles/
+# !.idea/runConfigurations/
+
+# Local/User-specific settings (Always ignore)
+.idea/workspace.xml
+.idea/shelf/
+.idea/dictionaries/
+.idea/httpRequests/
+build/
+# Compiled files and executables
+*.o
+*.obj
+*.exe
+*.out
+*.app

@@ -1,0 +1,2 @@
+add_executable(basic_usage_indexmap basic_usage/main.c)
+target_link_libraries(basic_usage_indexmap PRIVATE indexmap)

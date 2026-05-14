@@ -1,0 +1,3 @@
+[submodule "external/cvec"]
+	path = external/cvec
+	url = https://github.com/stepzak/c_vec.git
